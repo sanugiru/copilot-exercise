@@ -1,63 +1,28 @@
-// create web server
-const express = require('express');
-const app = express();
-const port = 3000;
+// Create web server and listen on port 8080
+// Load the comments module
+// Create a route for POST requests to /comments
+// When a POST request is made, parse the request body and add the comment to the comments array
+// Send back a 200 response
 
-// middleware
-app.use(express.json());
+var http = require('http');
+var comments = require('./comments');
+var url = require('url');
+var querystring = require('querystring');
 
-// import comments
-const comments = require('./comments');
-
-// get all comments
-app.get('/comments', (req, res) => {
-    res.json(comments);
+var server = http.createServer(function (req, res) {
+  if (req.method === 'POST' && url.parse(req.url).pathname === '/comments') {
+    var body = '';
+    req.on('data', function (chunk) {
+      body += chunk;
+    });
+    req.on('end', function () {
+      var comment = querystring.parse(body).comment;
+      comments.add(comment);
+      res.writeHead(200);
+      res.end();
+    });
+  }
 });
 
-// get a comment by id
-app.get('/comments/:id', (req, res) => {
-    const id = req.params.id;
-    const comment = comments.find(comment => comment.id === id);
-    if (comment) {
-        res.json(comment);
-    } else {
-        res.status(404).json({ message: 'Comment not found' });
-    }
-});
-
-// create a comment
-app.post('/comments', (req, res) => {
-    const comment = req.body;
-    comments.push(comment);
-    res.status(201).json(comment);
-});
-
-// update a comment
-app.put('/comments/:id', (req, res) => {
-    const id = req.params.id;
-    const commentIndex = comments.findIndex(comment => comment.id === id);
-    if (commentIndex !== -1) {
-        const comment = { ...comments[commentIndex], ...req.body };
-        comments[commentIndex] = comment;
-        res.json(comment);
-    } else {
-        res.status(404).json({ message: 'Comment not found' });
-    }
-});
-
-// delete a comment
-app.delete('/comments/:id', (req, res) => {
-    const id = req.params.id;
-    const commentIndex = comments.findIndex(comment => comment.id === id);
-    if (commentIndex !== -1) {
-        comments.splice(commentIndex, 1);
-        res.status(204).end();
-    } else {
-        res.status(404).json({ message: 'Comment not found' });
-    }
-});
-
-// start the server
-app.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
-});
+server.listen(8080);
+console.log('Server running on port 8080');
